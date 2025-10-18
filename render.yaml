@@ -4,14 +4,12 @@ services:
     env: python
     plan: starter
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "python run.py"
+    startCommand: "gunicorn --worker-class gevent -w 1 --bind 0.0.0.0:$PORT wsgi:app"
     envVars:
       - key: FLASK_ENV
         value: production
       - key: FLASK_DEBUG
         value: "0"
-      - key: PORT
-        value: "10000"
     disk:
       name: pto-data
       mountPath: /opt/render/project/src/backend/core
