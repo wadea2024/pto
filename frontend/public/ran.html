@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Live Ranking</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap');
+
+        :root {
+            --primary-color: #667eea;
+            --primary-dark: #5568d3;
+            --success-color: #10b981;
+            --secondary-color: #f59e0b;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Raleway', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 0;
+            margin: 0;
+            background: transparent;
+        }
+
+        h1 {
+            margin: 16px 20px;
+            color: var(--primary-dark);
+            font-size: 1.6em;
+            font-weight: 700;
+            text-align: left;
+        }
+
+        #ranking-box {
+            padding: 12px 20px;
+            margin: 0;
+            background: transparent;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        #ranking-top3 {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        #ranking-top3 li, #ranking-rest li {
+            list-style: none;
+            padding: 14px 20px;
+            font-weight: 500;
+            font-size: 1em;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-sm);
+        }
+
+        #ranking-top3 li:hover, #ranking-rest li:hover {
+            transform: translateX(4px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary-color);
+        }
+
+        #ranking-top3 li.top1 {
+            font-size: 1.3em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-color: #f59e0b;
+            box-shadow: var(--shadow-md);
+        }
+
+        #ranking-top3 li.top1::before {
+            content: '🥇';
+            margin-right: 10px;
+            font-size: 1.5em;
+        }
+
+        #ranking-top3 li.top2 {
+            font-size: 1.2em;
+            font-weight: 600;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        }
+
+        #ranking-top3 li.top2::before {
+            content: '🥈';
+            margin-right: 10px;
+            font-size: 1.4em;
+        }
+
+        #ranking-top3 li.top3 {
+            font-size: 1.1em;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+        }
+
+        #ranking-top3 li.top3::before {
+            content: '🥉';
+            margin-right: 10px;
+            font-size: 1.3em;
+        }
+
+        #ranking-rest {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            /* No max-height or scrollbar - parent iframe container handles scrolling */
+        }
+
+        .selected {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #fbbf24 100%) !important;
+            border-color: var(--secondary-color) !important;
+            color: white !important;
+            transform: scale(1.02) !important;
+        }
+
+        .voted {
+            background: linear-gradient(135deg, var(--success-color) 0%, #34d399 100%) !important;
+            border-color: var(--success-color) !important;
+            color: white !important;
+        }
+
+        .voted::after {
+            content: '✓';
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+
+        .played {
+            opacity: 0.5;
+            background: linear-gradient(135deg, #cbd5e1 0%, #e2e8f0 100%) !important;
+            border-color: #cbd5e1 !important;
+            text-decoration: line-through;
+            cursor: not-allowed !important;
+            pointer-events: none;
+        }
+
+        /* Counter badge */
+        #ranking-top3 li span:last-child,
+        #ranking-rest li span:last-child {
+            background: var(--primary-color);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 700;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .voted span:last-child {
+            background: rgba(255, 255, 255, 0.3) !important;
+        }
+
+        .selected span:last-child {
+            background: rgba(255, 255, 255, 0.3) !important;
+        }
+
+        .top1 span:last-child {
+            background: #f59e0b !important;
+        }
+    </style>
+</head>
+<body>
+<h1>Live Ranking</h1>
+<div id="ranking-box">
+    <ul id="ranking-top3"></ul>
+    <ul id="ranking-rest"></ul>
+</div>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+    const CATALOG_URL = "/catalog/catalog.json";
+    const socket = io();
+
+    let songCatalog = {};
+    let currentVotes = {};
+    let selectedId = null;
+    const deviceId = localStorage.getItem("deviceId") || crypto.randomUUID();
+    localStorage.setItem("deviceId", deviceId);
+
+    // Delegate click to parent window if available
+    function handleClick(id) {
+        if (parent && typeof parent.handleClick === "function") {
+            parent.handleClick(id);
+        } else {
+            // Fallback local behavior
+            if (selectedId === id) {
+                socket.emit("vote", {deviceId, songId: id});
+                selectedId = null;
+            } else {
+                selectedId = id;
+            }
+            markAll();
+        }
+    }
+
+    function markAll() {
+        requestAnimationFrame(() => {
+            const all = document.querySelectorAll('.song');
+            all.forEach(el => el.classList.remove('selected', 'voted', 'played'));
+
+            for (const id in songCatalog) {
+                const song = songCatalog[id];
+                const el = document.getElementById(id);
+                if (!el) continue;
+
+                // Synchronize with parent window state
+                if (parent && typeof parent.getSongState === "function") {
+                    const state = parent.getSongState(id);
+                    if (state === "selected") el.classList.add("selected");
+                    if (state === "voted") el.classList.add("voted");
+                    if (state === "played") el.classList.add("played");
+                }
+            }
+        });
+    }
+
+    function updateRankingDisplay(rankedIds, counts) {
+        const top3 = rankedIds.slice(0, 3);
+        const rest = rankedIds.slice(3);
+
+        const top3Container = document.getElementById("ranking-top3");
+        const restContainer = document.getElementById("ranking-rest");
+        top3Container.innerHTML = "";
+        restContainer.innerHTML = "";
+
+        for (let i = 0; i < top3.length; i++) {
+            const id = top3[i];
+            const li = createSongLi(id, counts[id], "top" + (i + 1));
+            top3Container.appendChild(li);
+        }
+
+        for (const id of rest) {
+            const li = createSongLi(id, counts[id]);
+            restContainer.appendChild(li);
+        }
+
+        markAll();
+
+        // Notify parent that content has changed (DOM update complete)
+        requestAnimationFrame(() => {
+            if (typeof notifyParentResize === 'function') {
+                notifyParentResize();
+            }
+        });
+    }
+
+    function createSongLi(id, count, extraClass = "") {
+        const li = document.createElement("li");
+        li.id = id;
+        li.onclick = () => handleClick(id);
+        li.className = "song " + extraClass;
+
+        const titleSpan = document.createElement("span");
+        titleSpan.textContent = songCatalog[id]?.title || id;
+        const countSpan = document.createElement("span");
+        countSpan.textContent = count || 0;
+
+        li.appendChild(titleSpan);
+        li.appendChild(countSpan);
+
+        // Try to synchronize state from parent window
+        function tryApplyState() {
+            if (parent && typeof parent.getSongState === "function") {
+                const state = parent.getSongState(id);
+                if (state === "selected") li.classList.add("selected");
+                if (state === "voted") li.classList.add("voted");
+                if (state === "played") li.classList.add("played");
+            }
+            else {
+                setTimeout(tryApplyState, 300);
+            }
+        }
+        tryApplyState();
+
+        return li;
+    }
+
+    socket.on("update", data => {
+        const byDevice = data.byDevice || {};
+        currentVotes = {};
+        for (const [device, songId] of Object.entries(byDevice)) {
+            if (!currentVotes[songId]) currentVotes[songId] = [];
+            currentVotes[songId].push(device);
+        }
+
+        const states = data.states || {};
+        for (const id in states) {
+            if (songCatalog[id]) songCatalog[id].state = states[id];
+        }
+
+        const counts = data.counts || {};
+        const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([id]) => id);
+        updateRankingDisplay(ranked, counts);
+
+        // Notify parent of content change
+        setTimeout(notifyParentResize, 50);
+    });
+
+    async function init() {
+        const res = await fetch(CATALOG_URL, { cache: 'force-cache' });
+        const catalog = await res.json();
+        for (const song of catalog) {
+            songCatalog[song.id] = song;
+        }
+    }
+
+    init().then(() => socket.emit("update_request"));
+
+    // 🔹 Auto-resize iframe when content changes
+    function notifyParentResize() {
+        if (parent && parent !== window) {
+            try {
+                const height = document.body.scrollHeight;
+                parent.postMessage({ type: 'resize', height: height }, '*');
+            } catch (e) {
+                // Silent fail if parent is not accessible
+            }
+        }
+    }
+
+    // Watch for any content changes
+    const resizeObserver = new MutationObserver(() => {
+        requestAnimationFrame(notifyParentResize);
+    });
+
+    resizeObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true
+    });
+
+    // Initial resize
+    window.addEventListener('load', () => {
+        setTimeout(notifyParentResize, 100);
+    });
+
+    // Expose for parent window
+    window.notifyParentResize = notifyParentResize;
+</script>
+</body>
+</html>

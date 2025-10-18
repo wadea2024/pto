@@ -1,0 +1,71 @@
+# cPanel Python Application .htaccess
+# This file configures Apache/Passenger for the PTO application
+
+# Enable Passenger
+PassengerEnabled On
+
+# Set Python version (adjust if needed - check your cPanel)
+PassengerPython /home/YOUR_USERNAME/virtualenv/PTO-main/3.9/bin/python3.9
+
+# Application startup file
+PassengerAppRoot /home/YOUR_USERNAME/alorfi.vip/py
+
+# Set environment to production
+PassengerAppEnv production
+
+# Performance settings
+PassengerMinInstances 1
+PassengerMaxPoolSize 6
+PassengerPoolIdleTime 0
+PassengerMaxRequests 1000
+
+# Enable restart on file changes (disable in production for better performance)
+PassengerRestartDir /home/YOUR_USERNAME/alorfi.vip/py/tmp
+
+# Logging
+PassengerLogLevel 3
+PassengerDebugLogFile /home/YOUR_USERNAME/alorfi.vip/py/passenger.log
+
+# Rewrite rules for static files
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /py/
+
+    # Serve static files directly
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule . passenger_wsgi.py [L]
+</IfModule>
+
+# Cache control for static assets
+<IfModule mod_expires.c>
+    ExpiresActive On
+
+    # Images
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+
+    # JSON files (catalog, manifests)
+    ExpiresByType application/json "access plus 1 hour"
+
+    # CSS and JavaScript
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+
+    # Fonts
+    ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
+
+# Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/json application/javascript
+</IfModule>
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>

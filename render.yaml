@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: pto-web
+    env: python
+    plan: starter
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python run.py"
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: "0"
+      - key: PORT
+        value: "10000"
+    disk:
+      name: pto-data
+      mountPath: /opt/render/project/src/backend/core
+      sizeGB: 1

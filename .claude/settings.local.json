@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(dir:*)",
+      "Bash(chmod:*)",
+      "Bash(php test_data.php:*)",
+      "Bash(php:*)",
+      "Read(//c/laragon/bin/php/php-8.1.10-Win32-vs16-x64/**)",
+      "Bash(taskkill:*)",
+      "Bash(tasklist:*)",
+      "Bash(wmic process where \"name=''python.exe''\" get ProcessId,CommandLine)",
+      "Bash(curl:*)",
+      "Bash(npm install)",
+      "Bash(start-servers.bat)",
+      "Bash(node websocket-server.js:*)",
+      "Bash(xcopy:*)",
+      "Bash(node:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

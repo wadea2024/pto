@@ -1,0 +1,92 @@
+════════════════════════════════════════════════════════════════
+   دليل النشر السريع على cPanel - alorfi.vip/py
+════════════════════════════════════════════════════════════════
+
+⚡ الخطوات الأساسية (5 دقائق):
+
+1️⃣ رفع الملفات
+   ───────────
+   • اذهب إلى cPanel → File Manager
+   • انتقل إلى: public_html/py/
+   • ارفع كل ملفات المشروع
+
+2️⃣ إنشاء Python App
+   ───────────────
+   • cPanel → Setup Python App → Create
+   • Python Version: 3.9 أو أعلى
+   • App Root: /home/YOUR_USERNAME/public_html/py
+   • App URL: alorfi.vip/py
+   • Startup File: passenger_wsgi.py
+   • Entry Point: application
+
+3️⃣ تثبيت المكتبات
+   ──────────────
+   • Terminal في cPanel:
+
+   source /home/YOUR_USERNAME/virtualenv/public_html/py/3.9/bin/activate
+   cd ~/public_html/py
+   pip install -r requirements.txt
+
+4️⃣ تعديل .htaccess
+   ───────────────
+   • افتح .htaccess
+   • استبدل YOUR_USERNAME باسم المستخدم الفعلي
+   • احفظ
+
+5️⃣ إنشاء المجلدات
+   ──────────────
+   cd ~/public_html/py
+   mkdir -p tmp backend/core backend/proposals
+   mkdir -p backend/core/songs/{lyrics,tabs}
+   mkdir -p backend/core/images/{artist,artist_thumbs}
+   touch backend/core/{votes,song_states,metadata_cache}.json
+   echo "[]" > backend/proposals/proposals.json
+   chmod -R 755 backend
+
+6️⃣ اختبار
+   ──────
+   • افتح: https://alorfi.vip/py
+   • يجب أن يعمل!
+
+7️⃣ إعادة التشغيل
+   ──────────────
+   touch ~/public_html/py/tmp/restart.txt
+
+════════════════════════════════════════════════════════════════
+
+🔧 استكشاف الأخطاء السريع:
+
+خطأ "Application Error":
+→ tail -50 ~/public_html/py/passenger.log
+
+خطأ "No module named":
+→ pip install -r requirements.txt
+→ touch tmp/restart.txt
+
+خطأ "Permission denied":
+→ chmod -R 755 ~/public_html/py
+→ chmod 777 backend/core backend/proposals
+
+════════════════════════════════════════════════════════════════
+
+📁 الملفات المهمة:
+   ✅ passenger_wsgi.py  (ملف البدء)
+   ✅ .htaccess          (التكوين)
+   ✅ requirements.txt   (المكتبات)
+   ✅ backend/           (الكود)
+   ✅ frontend/          (الواجهة)
+
+════════════════════════════════════════════════════════════════
+
+⚠️  ملاحظات مهمة:
+
+• استبدل YOUR_USERNAME باسم المستخدم الحقيقي
+• تأكد من نسخة Python 3.8+
+• أول تحميل قد يأخذ 5-10 ثوان
+• للتحديثات: ارفع الملفات → touch tmp/restart.txt
+
+════════════════════════════════════════════════════════════════
+
+📚 للتفاصيل الكاملة: اقرأ CPANEL_DEPLOYMENT.md
+
+════════════════════════════════════════════════════════════════
