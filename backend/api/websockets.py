@@ -14,9 +14,9 @@ except Exception:
 
 # No importes config aquí; vote_logic ya resuelve rutas y persistencia
 # PERFORMANCE: Configure SocketIO with optimizations
+# async_mode will be set by wsgi.py (gevent) or run.py (threading)
 socketio = SocketIO(
     cors_allowed_origins="*",
-    async_mode='threading',  # Use threading for better Windows performance
     ping_timeout=60,
     ping_interval=25,
     logger=False,  # Disable verbose logging

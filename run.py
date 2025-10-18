@@ -22,12 +22,25 @@ if __name__ == "__main__":
     # التحقق من بيئة الإنتاج
     is_production = os.environ.get("FLASK_ENV") == "production"
 
+    # تهيئة SocketIO بـ threading للتطوير المحلي
+    socketio.init_app(app,
+        cors_allowed_origins="*",
+        async_mode='threading',  # threading للتطوير المحلي (Windows-friendly)
+        ping_timeout=60,
+        ping_interval=25,
+        logger=debug,
+        engineio_logger=debug,
+        allow_upgrades=True,
+        transports=['websocket', 'polling']
+    )
+
     # تشغيل الخادم مع SocketIO
     print("\n" + "="*60)
     print("🚀 الخادم يعمل الآن!")
     print(f"📍 افتح المتصفح على: http://localhost:{port}")
     print(f"🔧 وضع Debug: {'مفعّل' if debug else 'معطّل'}")
     print(f"🌍 البيئة: {'إنتاج' if is_production else 'تطوير'}")
+    print(f"⚡ async_mode: threading (development)")
     print("="*60 + "\n")
 
     # في بيئة الإنتاج، نسمح بـ Werkzeug (مؤقتاً حتى نستخدم gunicorn)
